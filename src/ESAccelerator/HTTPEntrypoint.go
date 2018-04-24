@@ -14,6 +14,8 @@ type GlobalHTTPHandler struct {
 type HTTPConnection struct {
 	MyWriter http.ResponseWriter
 	MyBody   *http.Request
+
+	Notifier interface{}
 }
 
 type JSONResponse struct {
@@ -21,9 +23,9 @@ type JSONResponse struct {
 	Message interface{}
 }
 
-func (this *GlobalHTTPHandler) SendError(Connection HTTPConnection, Context []byte, StatusCode int) {
-	Delegate := Connection.MyWriter
-	Body := Connection.MyBody
+func (this *HTTPConnection) SendError(Context []byte, StatusCode int) {
+	Delegate := this.MyWriter
+	Body := this.MyBody
 
 	Delegate.WriteHeader(StatusCode)
 	Delegate.Write(Context)
@@ -31,16 +33,15 @@ func (this *GlobalHTTPHandler) SendError(Connection HTTPConnection, Context []by
 	log.Printf("ERR (%s): %s -> %d", Body.RemoteAddr, Body.URL.Path, StatusCode)
 }
 
-func (this *GlobalHTTPHandler) SendJSON(Connection HTTPConnection, ToJSON JSONResponse, StatusCode int) {
-	Delegate := Connection.MyWriter
-	Body := Connection.MyBody
+func (this *HTTPConnection) SendJSON(ToJSON interface{}, StatusCode int) {
+	Delegate := this.MyWriter
+	Body := this.MyBody
 
 	Stringfied, Exception := json.Marshal(ToJSON)
 
 	if Exception != nil {
-		Connection.SendError(
-			Connection,
-			[]byte(fmt.Sprintf("다음과 같은 타입을 JSON 형식으로 변환할 수 없었습니다: %T", ToJSON.Message)),
+		this.SendError(
+			[]byte(fmt.Sprintf("다음과 같은 타입을 JSON 형식으로 변환할 수 없었습니다: %T", ToJSON)),
 			http.StatusInternalServerError)
 
 		return
@@ -53,25 +54,24 @@ func (this *GlobalHTTPHandler) SendJSON(Connection HTTPConnection, ToJSON JSONRe
 }
 
 func (this *GlobalHTTPHandler) ServeHTTP(Writer http.ResponseWriter, Body *http.Request) {
+	MyConnection := HTTPConnection{ Writer, Body, nil }
+
 	if Body.Method != "POST" {
-		this.SendJSON(JSONResponse{
-			true,
-			fmt.Sprintf("다음 메서드는 지원하지 않습니다: %s", Body.Method)},
+		MyConnection.SendJSON(
+			JSONResponse{
+				true,
+				fmt.Sprintf("다음 메서드는 지원하지 않습니다: %s", Body.Method)},
 
 			403)
 
 		return
 	}
 
-	log.Printf("통과")
+	//log.Printf("통과")
 
-	ESResponse := <-__S_Circulator.AddESRequestToCirculator(CreateESRequest(this))
+	ESResponse := <-__S_Circulator.AddESRequestToCirculator(CreateESRequest(&MyConnection))
 
-	this.SendJSON(JSONResponse{
-		ESResponse.Error,
-		ESResponse.Response},
-
-		ESResponse.StatusCode)
+	MyConnection.SendJSON(ESResponse.Response, ESResponse.StatusCode)
 }
 
 func OpenHTTPServer(Address string) *http.Server {

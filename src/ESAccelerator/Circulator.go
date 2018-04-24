@@ -21,7 +21,7 @@ var __S_Circulator = MakeCirculator()
 func (this *Circulator) AddESRequestToCirculator(MyESRequest *ESRequest) <-chan CirculatorResponse {
 	MyChannel := make(chan CirculatorResponse)
 
-	MyESRequest.Notifier = func(Response interface{}, Error bool, StatusCode int) {
+	MyESRequest.Connection.Notifier = func(Response interface{}, Error bool, StatusCode int) {
 		MyChannel <- CirculatorResponse{
 			Error,
 			StatusCode,
@@ -60,7 +60,7 @@ func (this *Circulator) DoCirculate(Ticker *time.Ticker) {
 						"요청을 정상적으로 처리할 수 없었습니다. Circulator 객체가 요청 객체의 병합에 실패했습니다.",
 						403)
 
-					return
+					continue
 				}
 
 				if len(Specimens) == 0 ||
@@ -110,7 +110,7 @@ func (this *Circulator) SendResponse(Request *ESRequest, Error bool, Response in
 		switch Response.(type) {
 		case string:
 			{
-				Request.Notifier.(func(interface{}, bool, int))(Response.(string), Error, StatusCode)
+				Request.Connection.Notifier.(func(interface{}, bool, int))(Response.(string), Error, StatusCode)
 
 				return
 			}
@@ -124,12 +124,12 @@ func (this *Circulator) SendResponse(Request *ESRequest, Error bool, Response in
 		}
 	}
 
-	Request.Notifier.(func(interface{}, bool, int))(Response, Error, StatusCode)
+	Request.Connection.Notifier.(func(interface{}, bool, int))(Response, Error, StatusCode)
 }
 
 func MakeCirculator() *Circulator {
 	MyCirculator := Circulator{CreateNewQueue()}
-	MyTicker := time.NewTicker(2000 * time.Millisecond)
+	MyTicker := time.NewTicker(80 * time.Millisecond)
 
 	go MyCirculator.DoCirculate(MyTicker)
 

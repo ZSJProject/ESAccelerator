@@ -17,9 +17,7 @@ type ESRequestImpl interface {
 
 type ESRequest struct {
 	Type ESRequestImpl
-	Body *http.Request
-
-	Notifier interface{}
+	Connection *HTTPConnection
 }
 
 type ESRequestBody struct {
@@ -28,11 +26,11 @@ type ESRequestBody struct {
 }
 
 func (this *ESRequest) GetLinearly() (ESRequestImpl, *http.Request) {
-	return this.Type, this.Body
+	return this.Type, this.Connection.MyBody
 }
 
-func CreateESRequest(Delegate *GlobalHTTPHandler) *ESRequest {
-	Body := Delegate.MyBody
+func CreateESRequest(Connection *HTTPConnection) *ESRequest {
+	Body := Connection.MyBody
 	Path := Body.URL.Path
 
 	OPIdx := strings.LastIndex(Path, "_")
@@ -45,7 +43,7 @@ func CreateESRequest(Delegate *GlobalHTTPHandler) *ESRequest {
 	Impl := func() ESRequestImpl {
 		for k, v := range GetRecognizableRequests() {
 			if k == OP {
-				return v(Delegate)
+				return v(Connection)
 			}
 		}
 
@@ -58,6 +56,5 @@ func CreateESRequest(Delegate *GlobalHTTPHandler) *ESRequest {
 
 	return &ESRequest{
 		Impl,
-		Delegate.MyBody,
-		nil}
+		Connection}
 }
