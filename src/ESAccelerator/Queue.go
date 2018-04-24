@@ -1,24 +1,24 @@
 package ESAccelerator
 
 import (
-	"time"
-	"sync"
-	"reflect"
 	"log"
+	"reflect"
+	"sync"
+	"time"
 )
 
 const ESQueuePopFBoxLimit = 1000
 
-type ESTimestamp 		int64
-type ESQueueReturnType 	[] *ESRequest
+type ESTimestamp int64
+type ESQueueReturnType []*ESRequest
 
 type ESQueueItem struct {
-	Item ESQueueReturnType
+	Item      ESQueueReturnType
 	Timestamp ESTimestamp
 }
 
 type Queue struct {
-	Items []ESQueueItem
+	Items  []ESQueueItem
 	Latest ESTimestamp
 
 	Mutex sync.Mutex
@@ -55,7 +55,7 @@ func (this *Queue) Push(Item interface{}, Manual *ESTimestamp) ESTimestamp {
 	this.Mutex.Lock()
 	defer this.Mutex.Unlock()
 
-	this.Items = append(this.Items, ESQueueItem{Target, CurrentTime })
+	this.Items = append(this.Items, ESQueueItem{Target, CurrentTime})
 
 	if this.Latest == -1 || this.Latest < CurrentTime {
 		this.Latest = CurrentTime
@@ -73,12 +73,12 @@ func (this *Queue) Pop() *ESQueueReturnType {
 
 func (this *Queue) UnsafePop() *ESQueueReturnType {
 	if this.Length() > 0 {
-		Target 	:= this.Items[this.Length() - 1]
+		Target := this.Items[this.Length()-1]
 
-		this.Items 	= this.Items[:this.Length() - 1]
+		this.Items = this.Items[:this.Length()-1]
 
 		if this.Length() > 0 {
-			this.Latest	= this.Items[this.Length() - 1].Timestamp
+			this.Latest = this.Items[this.Length()-1].Timestamp
 		}
 
 		return &Target.Item
@@ -100,11 +100,11 @@ func (this *Queue) UnsafeMLength(Threshold ESTimestamp) int {
 	}
 
 	if Threshold < this.Latest && Threshold != -1 {
-		Seek	:= this.Length()
-		Range 	:= this.Latest - Threshold
+		Seek := this.Length()
+		Range := this.Latest - Threshold
 
 		for {
-			if Seek == 0 || this.Items[Seek - 1].Timestamp < Range {
+			if Seek == 0 || this.Items[Seek-1].Timestamp < Range {
 				break
 			}
 
@@ -167,7 +167,7 @@ func (this *Queue) MPop(Threshold ESTimestamp) *ESQueueReturnType {
 
 			return &Outgoing
 
-		}(this.Items[this.Length() - Range:this.Length()]...)
+		}(this.Items[this.Length()-Range : this.Length()]...)
 
 		FBox := make(ESQueueReturnType, 0, func(ShouldMake int) int {
 			if ShouldMake > ESQueuePopFBoxLimit {
@@ -176,7 +176,7 @@ func (this *Queue) MPop(Threshold ESTimestamp) *ESQueueReturnType {
 
 			return ShouldMake
 
-		}(this.Length() * 2))
+		}(this.Length()*2))
 
 		Product := make(ESQueueReturnType, 0, func() int {
 			Sum := 0
@@ -205,5 +205,5 @@ func (this *Queue) MPop(Threshold ESTimestamp) *ESQueueReturnType {
 }
 
 func CreateNewQueue() Queue {
-	return Queue{ Latest : -1 }
+	return Queue{Latest: -1}
 }

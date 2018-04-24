@@ -6,25 +6,25 @@ import (
 )
 
 type ESRequestImpl interface {
-	Name() 						string
-	Endpoint() 					string
+	Name() string
+	Endpoint() string
 
-	Compatible(ESRequestImpl) 	bool
-	GetRequestBody(*ESRequest) 	(*ESRequestBody, error)
+	Compatible(ESRequestImpl) bool
+	GetRequestBody(*ESRequest) (*ESRequestBody, error)
 
 	DoRequest(*Circulator, ...ESRequestBody)
 }
 
 type ESRequest struct {
-	Type 		ESRequestImpl
-	Body 		*http.Request
+	Type ESRequestImpl
+	Body *http.Request
 
-	Notifier	interface{}
+	Notifier interface{}
 }
 
 type ESRequestBody struct {
-	Origin		*ESRequest
-	Body		interface{}
+	Origin *ESRequest
+	Body   interface{}
 }
 
 func (this *ESRequest) GetLinearly() (ESRequestImpl, *http.Request) {
@@ -32,17 +32,17 @@ func (this *ESRequest) GetLinearly() (ESRequestImpl, *http.Request) {
 }
 
 func CreateESRequest(Delegate *GlobalHTTPHandler) *ESRequest {
-	Body 	:= Delegate.MyBody
-	Path	:= Body.URL.Path
+	Body := Delegate.MyBody
+	Path := Body.URL.Path
 
-	OPIdx	:= strings.LastIndex(Path, "_")
+	OPIdx := strings.LastIndex(Path, "_")
 
 	if OPIdx == -1 {
 		return nil
 	}
 
-	OP 		:= Path[OPIdx:]
-	Impl	:= func() ESRequestImpl {
+	OP := Path[OPIdx:]
+	Impl := func() ESRequestImpl {
 		for k, v := range GetRecognizableRequests() {
 			if k == OP {
 				return v(Delegate)

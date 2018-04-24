@@ -1,24 +1,24 @@
 package ESAccelerator
 
 import (
-	"time"
 	"log"
+	"time"
 )
 
 type CirculatorResponse struct {
-	Error		bool
-	StatusCode	int
+	Error      bool
+	StatusCode int
 
-	Response 	interface{}
+	Response interface{}
 }
 
 type Circulator struct {
-	MyQueue		Queue
+	MyQueue Queue
 }
 
-var __S_Circulator 	= MakeCirculator()
+var __S_Circulator = MakeCirculator()
 
-func (this *Circulator) AddESRequestToCirculator(MyESRequest *ESRequest) <- chan CirculatorResponse {
+func (this *Circulator) AddESRequestToCirculator(MyESRequest *ESRequest) <-chan CirculatorResponse {
 	MyChannel := make(chan CirculatorResponse)
 
 	MyESRequest.Notifier = func(Response interface{}, Error bool, StatusCode int) {
@@ -36,7 +36,7 @@ func (this *Circulator) AddESRequestToCirculator(MyESRequest *ESRequest) <- chan
 }
 
 func (this *Circulator) DoCirculate(Ticker *time.Ticker) {
-	Q 	:= &this.MyQueue
+	Q := &this.MyQueue
 
 	for {
 		<-Ticker.C
@@ -44,12 +44,12 @@ func (this *Circulator) DoCirculate(Ticker *time.Ticker) {
 		Jobs := Q.MPop(ESTimestamp(1000 * time.Millisecond))
 
 		if Jobs != nil {
-			PendedRequests	:= map[string][]ESRequestBody{}
-			Specimens 		:= make([]ESRequestImpl, 0, len(GetRecognizableRequests()))
+			PendedRequests := map[string][]ESRequestBody{}
+			Specimens := make([]ESRequestImpl, 0, len(GetRecognizableRequests()))
 
 			for _, V := range *Jobs {
 				SpecimenIdx := 0
-				Impl, _ 	:= V.GetLinearly()
+				Impl, _ := V.GetLinearly()
 
 				Body, Exception := Impl.GetRequestBody(V)
 
@@ -63,8 +63,7 @@ func (this *Circulator) DoCirculate(Ticker *time.Ticker) {
 					return
 				}
 
-				if
-					len(Specimens) == 0 ||
+				if len(Specimens) == 0 ||
 					func() bool {
 						CompatibleSpecimenWasFound := true
 
@@ -77,10 +76,10 @@ func (this *Circulator) DoCirculate(Ticker *time.Ticker) {
 
 						return CompatibleSpecimenWasFound
 					}() {
-						Specimens = append(Specimens, Impl)
-					}
+					Specimens = append(Specimens, Impl)
+				}
 
-				Endpoint	:= Specimens[SpecimenIdx].Endpoint()
+				Endpoint := Specimens[SpecimenIdx].Endpoint()
 				Box, Exists := PendedRequests[Endpoint]
 
 				if !Exists {
@@ -129,8 +128,8 @@ func (this *Circulator) SendResponse(Request *ESRequest, Error bool, Response in
 }
 
 func MakeCirculator() *Circulator {
-	MyCirculator 	:= Circulator{CreateNewQueue()}
-	MyTicker		:= time.NewTicker(2000 * time.Millisecond)
+	MyCirculator := Circulator{CreateNewQueue()}
+	MyTicker := time.NewTicker(2000 * time.Millisecond)
 
 	go MyCirculator.DoCirculate(MyTicker)
 

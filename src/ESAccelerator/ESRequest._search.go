@@ -1,10 +1,10 @@
 package ESAccelerator
 
 import (
-	"errors"
-	"strings"
-	"gopkg.in/olivere/elastic.v5"
 	"bytes"
+	"errors"
+	"gopkg.in/olivere/elastic.v5"
+	"strings"
 )
 
 type ESSearchRequest struct {
@@ -36,12 +36,12 @@ func (__DO_NOT_USE___ *ESSearchRequest) DoRequest(Self *Circulator, Bodies ...ES
 func (this *ESSearchRequest) GetRequestBody(Request *ESRequest) (*ESRequestBody, error) {
 	//ES 			:= GetGlobalESConnector()
 
-	GivenPath 	:= Request.Body.URL.Path
-	Separated 	:= strings.Split(GivenPath, "/")
+	GivenPath := Request.Body.URL.Path
+	Separated := strings.Split(GivenPath, "/")
 
-	Body		:= elastic.NewSearchRequest()
-	Buffer		:= new(bytes.Buffer)
-	Raw			:= func() string {
+	Body := elastic.NewSearchRequest()
+	Buffer := new(bytes.Buffer)
+	Raw := func() string {
 		Buffer.ReadFrom(Request.Body.Body)
 
 		return Buffer.String()

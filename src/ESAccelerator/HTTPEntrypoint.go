@@ -1,29 +1,29 @@
 package ESAccelerator
 
 import (
-	"net/http"
-	"log"
 	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
 )
 
 type GlobalHTTPHandler struct {
-	Handler 	http.Handler
+	Handler http.Handler
 }
 
 type HTTPConnection struct {
-	MyWriter 	http.ResponseWriter
-	MyBody 		*http.Request
+	MyWriter http.ResponseWriter
+	MyBody   *http.Request
 }
 
 type JSONResponse struct {
-	Error 		bool
-	Message		interface{}
+	Error   bool
+	Message interface{}
 }
 
 func (this *GlobalHTTPHandler) SendError(Connection HTTPConnection, Context []byte, StatusCode int) {
-	Delegate 				:= Connection.MyWriter
-	Body					:= Connection.MyBody
+	Delegate := Connection.MyWriter
+	Body := Connection.MyBody
 
 	Delegate.WriteHeader(StatusCode)
 	Delegate.Write(Context)
@@ -32,10 +32,10 @@ func (this *GlobalHTTPHandler) SendError(Connection HTTPConnection, Context []by
 }
 
 func (this *GlobalHTTPHandler) SendJSON(Connection HTTPConnection, ToJSON JSONResponse, StatusCode int) {
-	Delegate 				:= Connection.MyWriter
-	Body					:= Connection.MyBody
+	Delegate := Connection.MyWriter
+	Body := Connection.MyBody
 
-	Stringfied, Exception 	:= json.Marshal(ToJSON)
+	Stringfied, Exception := json.Marshal(ToJSON)
 
 	if Exception != nil {
 		Connection.SendError(
@@ -58,7 +58,7 @@ func (this *GlobalHTTPHandler) ServeHTTP(Writer http.ResponseWriter, Body *http.
 			true,
 			fmt.Sprintf("다음 메서드는 지원하지 않습니다: %s", Body.Method)},
 
-		403)
+			403)
 
 		return
 	}
@@ -75,7 +75,7 @@ func (this *GlobalHTTPHandler) ServeHTTP(Writer http.ResponseWriter, Body *http.
 }
 
 func OpenHTTPServer(Address string) *http.Server {
-	ServerInstance := &http.Server{ Addr : Address }
+	ServerInstance := &http.Server{Addr: Address}
 
 	ServerInstance.SetKeepAlivesEnabled(false)
 
