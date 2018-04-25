@@ -1,4 +1,4 @@
-package ESAccelerator
+package Core
 
 type ESDefaultRequest struct { /* no special implementation */ }
 

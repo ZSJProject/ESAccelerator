@@ -1,7 +1,7 @@
 package main
 
 import (
-	Me "ESAccelerator"
+	Me "github.com/ZSJProject/ESAccelerator/Core"
 	"log"
 	"os"
 )

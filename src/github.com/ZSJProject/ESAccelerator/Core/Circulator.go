@@ -1,4 +1,4 @@
-package ESAccelerator
+package Core
 
 import (
 	"log"
