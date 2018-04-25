@@ -8,7 +8,7 @@ import (
 
 func main() {
 	WaitForAppClosing := make(chan bool)
-	Server := Me.OpenHTTPServer(":8080")
+	Server := Me.OpenHTTPServer(":9200")
 	Flag := <-WaitForAppClosing
 
 	if Exception := Server.Shutdown(nil); Exception != nil {
