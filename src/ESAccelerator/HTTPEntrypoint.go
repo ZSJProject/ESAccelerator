@@ -112,8 +112,6 @@ func (this *GlobalHTTPHandler) ServeHTTP(Writer http.ResponseWriter, Body *http.
 func OpenHTTPServer(Address string) *http.Server {
 	ServerInstance := &http.Server{Addr: Address}
 
-	//ServerInstance.SetKeepAlivesEnabled(false)
-
 	http.Handle("/", &GlobalHTTPHandler{})
 
 	go func() {
