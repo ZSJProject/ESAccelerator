@@ -1,5 +1,12 @@
 package ESAccelerator
 
+import (
+	"net/url"
+	"net/http/httputil"
+)
+
+const ESProxyDestination = "http://es.vm.zsj.co.kr:9200"
+
 type ESProxyRequest struct { /* no special implementation */ }
 
 func (this *ESProxyRequest) Name() string {
@@ -19,18 +26,23 @@ func (this *ESProxyRequest) Compatible(Object ESRequestImpl) bool {
 }
 
 func (__DO_NOT_USE___ *ESProxyRequest) DoRequest(Self *Circulator, Bodies ...ESRequestBody) {
-	ES 			:= GetGlobalESConnector()
-	ESMeta		:= ES.Metadata.Origin
-
 	for _, V := range Bodies {
-		Self.SendResponse(V.Origin, false, ESMeta, 200)
+		Connection	:= V.Origin.Connection
+		Flag		:= &Connection.MyFlag
+
+		Flag.Interrupted = true
+
+		//Reverse proxy
+		V.Body.(*httputil.ReverseProxy).ServeHTTP(Connection.MyWriter, Connection.MyBody)
+
+		Self.SendResponse(V.Origin, false, "__INTERRUPTED__", 999)
 	}
 }
 
 func (this *ESProxyRequest) GetRequestBody(Request *ESRequest) (*ESRequestBody, error) {
-	Connection 	:= Request.Connection
+	DestURL, _	:= url.Parse(ESProxyDestination)
 
 	return &ESRequestBody{
 		Request,
-		Connection.MyBody}, nil
+		httputil.NewSingleHostReverseProxy(DestURL)}, nil
 }

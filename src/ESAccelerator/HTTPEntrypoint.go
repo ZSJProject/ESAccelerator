@@ -21,7 +21,8 @@ type HTTPConnection struct {
 }
 
 type HTTPResponseFlag struct {
-	HasBody	bool
+	HasBody			bool
+	Interrupted		bool
 }
 
 type JSONResponse struct {
@@ -70,7 +71,7 @@ func (this *GlobalHTTPHandler) ServeHTTP(Writer http.ResponseWriter, Body *http.
 	MyConnection 	:= HTTPConnection{
 		Writer,
 		Body,
-		HTTPResponseFlag{ false },
+		HTTPResponseFlag{ false, false },
 		nil}
 
 	ESResponse 		:= <-__S_Circulator.AddESRequestToCirculator(CreateESRequest(&MyConnection))
@@ -103,7 +104,9 @@ func (this *GlobalHTTPHandler) ServeHTTP(Writer http.ResponseWriter, Body *http.
 		break
 	}
 
-	MyConnection.SendJSON(ESResponse.Response, ESResponse.StatusCode)
+	if !Flag.Interrupted {
+		MyConnection.SendJSON(ESResponse.Response, ESResponse.StatusCode)
+	}
 }
 
 func OpenHTTPServer(Address string) *http.Server {
