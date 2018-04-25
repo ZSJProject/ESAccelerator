@@ -15,7 +15,13 @@ type HTTPConnection struct {
 	MyWriter http.ResponseWriter
 	MyBody   *http.Request
 
+	MyFlag	HTTPResponseFlag
+
 	Notifier interface{}
+}
+
+type HTTPResponseFlag struct {
+	HasBody	bool
 }
 
 type JSONResponse struct {
@@ -28,7 +34,10 @@ func (this *HTTPConnection) SendError(Context []byte, StatusCode int) {
 	Body := this.MyBody
 
 	Delegate.WriteHeader(StatusCode)
-	Delegate.Write(Context)
+
+	if this.MyFlag.HasBody {
+		Delegate.Write(Context)
+	}
 
 	log.Printf("ERR (%s): %s -> %d", Body.RemoteAddr, Body.URL.Path, StatusCode)
 }
@@ -47,29 +56,52 @@ func (this *HTTPConnection) SendJSON(ToJSON interface{}, StatusCode int) {
 		return
 	}
 
+	Delegate.Header().Set("Content-Type", "application/json")
 	Delegate.WriteHeader(StatusCode)
-	Delegate.Write(Stringfied)
+
+	if this.MyFlag.HasBody {
+		Delegate.Write(Stringfied)
+	}
 
 	log.Printf("OK (%s): %s -> %d", Body.RemoteAddr, Body.URL.Path, StatusCode)
 }
 
 func (this *GlobalHTTPHandler) ServeHTTP(Writer http.ResponseWriter, Body *http.Request) {
-	MyConnection := HTTPConnection{ Writer, Body, nil }
+	MyConnection 	:= HTTPConnection{
+		Writer,
+		Body,
+		HTTPResponseFlag{ false },
+		nil}
 
-	if Body.Method != "POST" {
-		MyConnection.SendJSON(
-			JSONResponse{
-				true,
-				fmt.Sprintf("다음 메서드는 지원하지 않습니다: %s", Body.Method)},
+	ESResponse 		:= <-__S_Circulator.AddESRequestToCirculator(CreateESRequest(&MyConnection))
+	Flag			:= &MyConnection.MyFlag
 
-			403)
+	switch Method := Body.Method; Method {
+	case "GET":
+		fallthrough
+	case "POST":
+		fallthrough
+	case "PUT":
+		fallthrough
+	case "DELETE":
+		{
+			Flag.HasBody = true
 
-		return
+			break
+		}
+
+	case "TRACE":
+		fallthrough
+	case "CONNECT":
+		{
+			MyConnection.SendError([]byte{}, 405)
+
+			return
+		}
+
+	default:
+		break
 	}
-
-	//log.Printf("통과")
-
-	ESResponse := <-__S_Circulator.AddESRequestToCirculator(CreateESRequest(&MyConnection))
 
 	MyConnection.SendJSON(ESResponse.Response, ESResponse.StatusCode)
 }
@@ -77,7 +109,7 @@ func (this *GlobalHTTPHandler) ServeHTTP(Writer http.ResponseWriter, Body *http.
 func OpenHTTPServer(Address string) *http.Server {
 	ServerInstance := &http.Server{Addr: Address}
 
-	ServerInstance.SetKeepAlivesEnabled(false)
+	//ServerInstance.SetKeepAlivesEnabled(false)
 
 	http.Handle("/", &GlobalHTTPHandler{})
 

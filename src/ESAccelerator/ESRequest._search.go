@@ -18,6 +18,18 @@ func (this *ESSearchRequest) Endpoint() string {
 	return "_msearch"
 }
 
+func (this *ESSearchRequest) Acceptable(Object *HTTPConnection) bool {
+	switch Method := Object.MyBody.Method; Method {
+	case "GET":
+		fallthrough
+	case "POST":
+		return true
+
+	default:
+		return false
+	}
+}
+
 func (this *ESSearchRequest) Compatible(Object ESRequestImpl) bool {
 	return Object.Endpoint() == this.Endpoint()
 }

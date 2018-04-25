@@ -21,16 +21,28 @@ var __S_Circulator = MakeCirculator()
 func (this *Circulator) AddESRequestToCirculator(MyESRequest *ESRequest) <-chan CirculatorResponse {
 	MyChannel := make(chan CirculatorResponse)
 
-	MyESRequest.Connection.Notifier = func(Response interface{}, Error bool, StatusCode int) {
-		MyChannel <- CirculatorResponse{
-			Error,
-			StatusCode,
-			Response}
+	if MyESRequest == nil {
+		go func() {
+			MyChannel <- CirculatorResponse{
+				true,
+				403,
+				JSONResponse{
+					true,
+					"ESRequest 객체를 생성하지 못했습니다."}}
+		}()
 
-		close(MyChannel)
+	} else {
+		MyESRequest.Connection.Notifier = func(Response interface{}, Error bool, StatusCode int) {
+			MyChannel <- CirculatorResponse{
+				Error,
+				StatusCode,
+				Response}
+
+			close(MyChannel)
+		}
+
+		this.MyQueue.Push(MyESRequest, nil)
 	}
-
-	this.MyQueue.Push(MyESRequest, nil)
 
 	return MyChannel
 }
@@ -49,16 +61,18 @@ func (this *Circulator) DoCirculate(Ticker *time.Ticker) {
 
 			for _, V := range *Jobs {
 				SpecimenIdx := 0
-				Impl, _ := V.GetLinearly()
+				Impl, Request := V.GetLinearly()
 
 				Body, Exception := Impl.GetRequestBody(V)
 
 				if Exception != nil {
+					log.Printf("ERROR (%s): %s -> %s", Request.RemoteAddr, Request.URL.Path, Exception.Error())
+
 					this.SendResponse(
 						V,
 						true,
-						"요청을 정상적으로 처리할 수 없었습니다. Circulator 객체가 요청 객체의 병합에 실패했습니다.",
-						403)
+						Exception.Error(),
+						400)
 
 					continue
 				}

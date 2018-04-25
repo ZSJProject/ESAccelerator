@@ -10,6 +10,8 @@ type ESRequestImpl interface {
 	Endpoint() string
 
 	Compatible(ESRequestImpl) bool
+	Acceptable(*HTTPConnection) bool
+
 	GetRequestBody(*ESRequest) (*ESRequestBody, error)
 
 	DoRequest(*Circulator, ...ESRequestBody)
@@ -30,28 +32,40 @@ func (this *ESRequest) GetLinearly() (ESRequestImpl, *http.Request) {
 }
 
 func CreateESRequest(Connection *HTTPConnection) *ESRequest {
-	Body := Connection.MyBody
-	Path := Body.URL.Path
+	Body 	:= Connection.MyBody
+	Path 	:= Body.URL.Path
 
-	OPIdx := strings.LastIndex(Path, "_")
+	OPIdx 	:= strings.LastIndex(Path, "_")
+	OP		:= func() string {
+		if OPIdx == -1 {
+			return Path
+		}
 
-	if OPIdx == -1 {
-		return nil
-	}
+		return Path[OPIdx:]
+	}()
 
-	OP := Path[OPIdx:]
 	Impl := func() ESRequestImpl {
-		for k, v := range GetRecognizableRequests() {
-			if k == OP {
-				return v(Connection)
+		for _, V := range GetRecognizableRequests() {
+			switch V.Hint.(type) {
+			case string:
+				if V.Hint.(string) == OP {
+					return V.Generator(Connection)
+				}
+
+				break
+
+			case func(*HTTPConnection) bool:
+				if V.Hint.(func(*HTTPConnection) bool)(Connection) {
+					return V.Generator(Connection)
+				}
 			}
 		}
 
 		return nil
 	}()
 
-	if Impl == nil {
-		return nil
+	if Impl == nil || !Impl.Acceptable(Connection) {
+		Impl =  ConvertToESRequestImpl(&ESProxyRequest{})
 	}
 
 	return &ESRequest{

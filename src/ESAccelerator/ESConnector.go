@@ -9,13 +9,15 @@ type ESMetadata struct {
 	ESEndpoint      string
 	ESVersion       string
 	ESBootstrapCode int
+
+	Origin			*elastic.PingResult
 }
 
 type ESConnection struct {
-	Context context.Context
-	Client  *elastic.Client
+	Context 	context.Context
+	Client  	*elastic.Client
 
-	Metadata *ESMetadata
+	Metadata	 *ESMetadata
 }
 
 var __S_ESMetadata = &ESMetadata{ESEndpoint: "http://es.vm.zsj.co.kr:9200"}
@@ -36,8 +38,9 @@ func MakeESConnection() *ESConnection {
 			panic(Exception)
 		}
 
-		__S_ESMetadata.ESVersion = Info.Version.Number
-		__S_ESMetadata.ESBootstrapCode = Code
+		__S_ESMetadata.Origin			= Info
+		__S_ESMetadata.ESVersion 		= Info.Version.Number
+		__S_ESMetadata.ESBootstrapCode 	= Code
 	}
 
 	return &ESConnection{
