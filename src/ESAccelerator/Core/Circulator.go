@@ -16,7 +16,7 @@ type Circulator struct {
 	MyQueue Queue
 }
 
-var __S_Circulator = MakeCirculator()
+var __S_Circulator = MakeCirculator(10000)
 
 func (this *Circulator) AddESRequestToCirculator(MyESRequest *ESRequest) <-chan CirculatorResponse {
 	MyChannel := make(chan CirculatorResponse)
@@ -53,7 +53,7 @@ func (this *Circulator) DoCirculate(Ticker *time.Ticker) {
 	for {
 		<-Ticker.C
 
-		Jobs := Q.MPop(ESTimestamp(1000 * time.Millisecond))
+		Jobs := Q.MPop(ESTimestamp(10000 * time.Millisecond))
 
 		if Jobs != nil {
 			PendedRequests := map[string][]ESRequestBody{}
@@ -78,14 +78,19 @@ func (this *Circulator) DoCirculate(Ticker *time.Ticker) {
 				}
 
 				if len(Specimens) == 0 ||
-					func() bool {
-						CompatibleSpecimenWasFound := true
+					!func() bool {
+						CompatibleSpecimenWasFound := false
 
 						for Acc, V_ := range Specimens {
-							if !V_.Compatible(Impl) {
-								SpecimenIdx = Acc
-								CompatibleSpecimenWasFound = false
+							SpecimenIdx = Acc
+
+							if CompatibleSpecimenWasFound = V_.Compatible(Impl); CompatibleSpecimenWasFound {
+								break
 							}
+						}
+
+						if !CompatibleSpecimenWasFound {
+							SpecimenIdx++
 						}
 
 						return CompatibleSpecimenWasFound
@@ -141,9 +146,9 @@ func (this *Circulator) SendResponse(Request *ESRequest, Error bool, Response in
 	Request.Connection.Notifier.(func(interface{}, bool, int))(Response, Error, StatusCode)
 }
 
-func MakeCirculator() *Circulator {
+func MakeCirculator(Interval time.Duration) *Circulator {
 	MyCirculator := Circulator{CreateNewQueue()}
-	MyTicker := time.NewTicker(80 * time.Millisecond)
+	MyTicker := time.NewTicker(Interval * time.Millisecond)
 
 	go MyCirculator.DoCirculate(MyTicker)
 
