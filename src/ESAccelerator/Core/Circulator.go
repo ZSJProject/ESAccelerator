@@ -16,7 +16,7 @@ type Circulator struct {
 	MyQueue Queue
 }
 
-var __S_Circulator = MakeCirculator(10000)
+var __S_Circulator = MakeCirculator(80)
 
 func (this *Circulator) AddESRequestToCirculator(MyESRequest *ESRequest) <-chan CirculatorResponse {
 	MyChannel := make(chan CirculatorResponse)
@@ -53,7 +53,7 @@ func (this *Circulator) DoCirculate(Ticker *time.Ticker) {
 	for {
 		<-Ticker.C
 
-		Jobs := Q.MPop(ESTimestamp(10000 * time.Millisecond))
+		Jobs := Q.MPop(ESTimestamp(1000 * time.Millisecond))
 
 		if Jobs != nil {
 			PendedRequests := map[string][]ESRequestBody{}
