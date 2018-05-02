@@ -24,7 +24,7 @@ func (this *ESProxyRequest) Acceptable(Object *HTTPConnection) bool {
 }
 
 func (this *ESProxyRequest) Compatible(Object ESRequestImpl) bool {
-	return true
+	return Object.Name() == this.Name()
 }
 
 func (__DO_NOT_USE___ *ESProxyRequest) DoRequest(Self *Circulator, Bodies ...ESRequestBody) {
