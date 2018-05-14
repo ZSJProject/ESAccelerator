@@ -51,7 +51,7 @@ func (__DO_NOT_USE___ *ESIndexRequest) DoRequest(Self *Circulator, Bodies ...ESR
 
 			Response := Results.([]map[string]*elastic.BulkResponseItem)[Acc]["index"]
 
-			Self.SendResponse(V, IsException, Response, 200)
+			Self.SendResponse(V, IsException, Response, Response.Status)
 		}
 	}
 
